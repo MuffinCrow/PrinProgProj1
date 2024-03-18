@@ -92,7 +92,16 @@ static int digit()
 
 static int variable()
 {
-	/* YOUR CODE GOES HERE */
+	int reg;
+
+	if (!is_identifier(token)) {
+		ERROR("Expected variable\n");
+		exit(EXIT_FAILURE);
+	}
+	reg = next_register();
+	CodeGen(LOAD, reg, token, EMPTY_FIELD);
+	next_token();
+	return reg;
 }
 
 static int expr()
@@ -107,7 +116,41 @@ static int expr()
 		reg = next_register();
 		CodeGen(ADD, reg, left_reg, right_reg);
 		return reg;
-		/* YOUR CODE GOES HERE */
+	case '-':
+		next_token();
+		left_reg = expr();
+		right_reg = expr();
+		reg = next_register();
+		CodeGen(SUB, reg, left_reg, right_reg);
+		return reg;
+	case '*':
+		next_token();
+		left_reg = expr();
+		right_reg = expr();
+		reg = next_register();
+		CodeGen(MUL, reg, left_reg, right_reg);
+		return reg;
+	case '&':
+		next_token();
+		left_reg = expr();
+		right_reg = expr();
+		reg = next_register();
+		CodeGen(AND, reg, left_reg, right_reg);
+		return reg;
+	case '|':
+		next_token();
+		left_reg = expr();
+		right_reg = expr();
+		reg = next_register();
+		CodeGen(OR, reg, left_reg, right_reg);
+		return reg;
+	case 'a':
+	case 'b':
+	case 'c':
+	case 'd':
+	case 'e':
+	case 'f':
+		return variable();
 	case '0':
 	case '1':
 	case '2':
@@ -127,39 +170,64 @@ static int expr()
 
 static void assign()
 {
-	/* YOUR CODE GOES HERE */
+	int reg = token;
+	
+	next_token();
+
+	next_token();
+
+	int ereg = expr();
+
+	CodeGen(STORE, reg, ereg, EMPTY_FIELD);
 }
 
 static void read()
 {
-	/* YOUR CODE GOES HERE */
+	CodeGen(READ, token, EMPTY_FIELD, EMPTY_FIELD);
+	next_token();
 }
 
 static void print()
 {
-	/* YOUR CODE GOES HERE */
+	CodeGen(WRITE, token, EMPTY_FIELD, EMPTY_FIELD);
+	next_token();
 }
 
 static void stmt()
 {
-	/* YOUR CODE GOES HERE */
+	if (is_identifier(token)) {
+		assign();
+	} else if (token == '?') {
+		next_token();
+		read();
+	} else if (token == '%') {
+		next_token();
+		print();
+	} else {
+		ERROR("Program error.  Current input symbol is %c\n", token);
+		exit(EXIT_FAILURE);
+	}
 }
 
 static void morestmts()
 {
-	/* YOUR CODE GOES HERE */
+	while (token == ';') {
+		next_token();
+		stmt();
+	}
+	
 }
 
 static void stmtlist()
 {
-	/* YOUR CODE GOES HERE */
+	stmt();
+	morestmts();
 }
 
 static void program()
 {
-	/* YOUR CODE GOES HERE */
-	expr();
-	if (token != '.') {
+	stmtlist();
+	if (token != '!') {
 		ERROR("Program error.  Current input symbol is %c\n", token);
 		exit(EXIT_FAILURE);
 	};
@@ -223,7 +291,7 @@ static inline int to_digit(char c)
 
 static inline int is_identifier(char c)
 {
-	if (c >= 'a' && c <= 'e')
+	if (c >= 'a' && c <= 'f')
 		return 1;
 	return 0;
 }
